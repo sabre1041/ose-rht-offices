@@ -2,14 +2,14 @@
    "kind": "Template",
    "apiVersion": "v1",
    "metadata": {
-      "name": "rhtoffices",
+      "name": "rht-offices",
       "annotations": {
          "iconClass": "icon-jboss",
          "description": "Application template for RHT Offices application on EAP 6 & MongoDB built using STI"
       }
    },
    "labels": {
-      "template": "rhtoffices"
+      "template": "rht-offices"
    },
    "parameters": [
       {
@@ -20,7 +20,7 @@
       {
          "description": "The name for the application.",
          "name": "APPLICATION_NAME",
-         "value": "rhtoffices"
+         "value": "rht-offices"
       },
       {
          "description": "Custom hostname for service routes.  Leave blank for default hostname, e.g.: <application-name>.<project>.<default-domain-suffix>",
