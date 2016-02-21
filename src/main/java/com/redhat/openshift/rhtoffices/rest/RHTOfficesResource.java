@@ -108,6 +108,7 @@ public class RHTOfficesResource {
 			while (cursor.hasNext()) {
 				allOfficesList.add(this.populateOfficeInformation(cursor.next()));
 			}
+			System.out.println("Spatial query results: " + allOfficesList.size());
 		} finally {
 			cursor.close();
 		}

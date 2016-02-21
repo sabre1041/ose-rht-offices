@@ -5,18 +5,14 @@
       "name": "rhtoffices",
       "annotations": {
          "iconClass": "icon-jboss",
-         "description": "Application template for RHT Offices application on EAP 6 & MongoDB built using STI"
+         "description": "Application template for RHT Offices application on EAP 6 & MongoDB built using STI",
+         "tags": "instant-app,eap,mongodb,javaee,java,database,jboss,xpaas"
       }
    },
    "labels": {
-      "template": "rhtoffices"
+      "template": "rhtoffices-template"
    },
    "parameters": [
-      {
-         "description": "EAP Release version, e.g. 6.4, etc.",
-         "name": "EAP_RELEASE",
-         "value": "6.4"
-      },
       {
          "description": "The name for the application.",
          "name": "APPLICATION_NAME",
@@ -43,16 +39,16 @@
          "value": "root"
       },
       {
-         "description": "Disable data file preallocation.",
-         "name": "MONGODB_NOPREALLOC"
+         "name": "IMAGE_STREAM_NAMESPACE",
+         "description": "Namespace in which the ImageStreams for Red Hat Middleware images are installed. These ImageStreams are normally installed in the openshift namespace. You should only need to modify this if you've installed the ImageStreams in a different namespace/project.",
+         "value": "openshift",
+         "required": true
       },
       {
-         "description": "Set MongoDB to use a smaller default data file size.",
-         "name": "MONGODB_SMALLFILES"
-      },
-      {
-         "description": "Runs MongoDB in a quiet mode that attempts to limit the amount of output.",
-         "name": "MONGODB_QUIET"
+          "name": "DATABASE_SERVICE_NAME",
+          "description": "Database service name",
+          "value": "mongodb",
+          "required": true
       },
       {
          "description": "Database user name",
@@ -126,8 +122,8 @@
                "sourceStrategy": {
                   "from": {
                      "kind": "ImageStreamTag",
-                     "namespace": "openshift",
-                     "name": "jboss-eap6-openshift:${EAP_RELEASE}"
+                     "namespace": "${IMAGE_STREAM_NAMESPACE}",
+                     "name": "jboss-eap64-openshift:1.2"
                   }
                }
             },
@@ -161,9 +157,9 @@
          "kind": "DeploymentConfig",
          "apiVersion": "v1",
          "metadata": {
-            "name": "${APPLICATION_NAME}-mongodb",
+            "name": "${DATABASE_SERVICE_NAME}",
             "labels": {
-               "application": "${APPLICATION_NAME}"
+               "application": "${DATABASE_SERVICE_NAME}"
             }
          },
          "spec": {
@@ -176,7 +172,7 @@
                   "imageChangeParams": {
                      "automatic": true,
                      "containerNames": [
-                        "${APPLICATION_NAME}-mongodb"
+                        "${DATABASE_SERVICE_NAME}"
                      ],
                      "from": {
                         "kind": "ImageStreamTag",
@@ -191,26 +187,28 @@
             ],
             "replicas": 1,
             "selector": {
-               "deploymentConfig": "${APPLICATION_NAME}-mongodb"
+               "deploymentConfig": "${DATABASE_SERVICE_NAME}"
             },
             "template": {
                "metadata": {
-                  "name": "${APPLICATION_NAME}-mongodb",
+                  "name": "${DATABASE_SERVICE_NAME}",
                   "labels": {
-                     "deploymentConfig": "${APPLICATION_NAME}-mongodb",
-                     "application": "${APPLICATION_NAME}"
+                     "deploymentConfig": "${DATABASE_SERVICE_NAME}",
+                     "application": "${DATABASE_SERVICE_NAME}"
                   }
                },
                "spec": {
                   "volumes": [
                      {
-                        "name": "${APPLICATION_NAME}-mongodb-data",
-                        "emptyDir": {}
+                        "name": "${DATABASE_SERVICE_NAME}-data",
+                        "emptyDir": {
+                            "medium": ""
+                        }
                      }
                   ],
                   "containers": [
                      {
-                        "name": "${APPLICATION_NAME}-mongodb",
+                        "name": "mongodb",
                         "image": "mongodb",
                         "ports": [
                            {
@@ -234,24 +232,12 @@
                            {
                               "name": "MONGODB_ADMIN_PASSWORD",
                               "value": "${MONGODB_ADMIN_PASSWORD}"
-                           },
-                           {
-                              "name": "MONGODB_NOPREALLOC",
-                              "value": "${MONGODB_NOPREALLOC}"
-                           },
-                           {
-                              "name": "MONGODB_SMALLFILES",
-                              "value": "${MONGODB_SMALLFILES}"
-                           },
-                           {
-                              "name": "MONGODB_QUIET",
-                              "value": "${MONGODB_QUIET}"
                            }
                         ],
                         "resources": {},
                         "volumeMounts": [
                            {
-                              "name": "${APPLICATION_NAME}-mongodb-data",
+                              "name": "${DATABASE_SERVICE_NAME}-data",
                               "mountPath": "/var/lib/mongodb/data"
                            }
                         ],
@@ -340,12 +326,28 @@
                         },
                         "env": [
                            {
-                              "name": "OPENSHIFT_DNS_PING_SERVICE_NAME",
-                              "value": "${APPLICATION_NAME}-ping"
+                               "name": "OPENSHIFT_KUBE_PING_LABELS",
+                               "value": "application=${APPLICATION_NAME}"
                            },
                            {
-                              "name": "OPENSHIFT_DNS_PING_SERVICE_PORT",
-                              "value": "8888"
+                               "name": "OPENSHIFT_KUBE_PING_NAMESPACE",
+                                "valueFrom": {
+                                   "fieldRef": {
+                                       "fieldPath": "metadata.namespace"
+                                   }
+                               }
+                           },
+                           {
+                               "name": "HORNETQ_CLUSTER_PASSWORD",
+                               "value": "${HORNETQ_CLUSTER_PASSWORD}"
+                           },
+                           {
+                               "name": "HORNETQ_QUEUES",
+                               "value": "${HORNETQ_QUEUES}"
+                           },
+                           {
+                               "name": "HORNETQ_TOPICS",
+                               "value": "${HORNETQ_TOPICS}"
                            },
                            {
                               "name": "MONGODB_USER",
@@ -405,7 +407,7 @@
          "metadata": {
             "name": "mongodb",
             "labels": {
-               "application": "${APPLICATION_NAME}"
+               "application": "${DATABASE_SERVICE_NAME}"
             }
          },
          "spec": {
@@ -416,7 +418,7 @@
                }
             ],
             "selector": {
-               "deploymentConfig": "${APPLICATION_NAME}-mongodb"
+               "deploymentConfig": "${DATABASE_SERVICE_NAME}"
             }
          }
       },
